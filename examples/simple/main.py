@@ -1,33 +1,45 @@
-from uuid import uuid4
+import logging
+import os
 
-from examples.simple.serializer import Payload
-from examples.simple.tasks import hello
-from fastapi import FastAPI, Response, status
-from google.api_core.exceptions import AlreadyExists
+from fastapi import FastAPI
+from fastapi.routing import APIRouter
+from gelery.taskroute import TaskRouteBuilder
+from gelery.utils import queue_path
+from pydantic import BaseModel
+
+TaskRoute = TaskRouteBuilder(
+    # Base URL where the task server will get hosted
+    base_url=os.getenv("TASK_LISTENER_BASE_URL", default="https://6045-49-207-221-153.ngrok.io"),
+    # Full queue path to which we'll send tasks.
+    # Edit values below to match your project
+    queue_path=queue_path(
+        project=os.getenv("TASK_PROJECT_ID", default="gcp-project-id"),
+        location=os.getenv("TASK_LOCATION", default="asia-south1"),
+        queue=os.getenv("TASK_QUEUE", default="test-queue"),
+    ),
+)
+
+task_router = APIRouter(route_class=TaskRoute, prefix="/tasks")
+
+logger = logging.getLogger("uvicorn")
+
+
+class Payload(BaseModel):
+    message: str
+
+
+@task_router.post("/hello")
+async def hello(p: Payload = Payload(message="Default")):
+    logger.warning(f"Hello task ran with payload: {p.message}")
+
 
 app = FastAPI()
 
-task_id = str(uuid4())
+
+@app.get("/trigger")
+async def trigger():
+    hello.delay(p=Payload(message="Triggered task"))
+    return {"message": "Basic hello task triggered"}
 
 
-@app.get("/basic")
-async def basic():
-    hello.delay(p=Payload(message="Basic task"))
-    return {"message": "Basic hello task scheduled"}
-
-
-@app.get("/delayed")
-async def delayed():
-    hello.options(countdown=5).delay(p=Payload(message="Delayed task"))
-    return {"message": "Delayed hello task scheduled"}
-
-
-@app.get("/deduped")
-async def deduped(response: Response):
-
-    try:
-        hello.options(task_id=task_id).delay(p=Payload(message="Deduped task"))
-        return {"message": "Deduped hello task scheduled"}
-    except AlreadyExists as e:
-        response.status_code = status.HTTP_409_CONFLICT
-        return {"error": "Could not schedule task.", "reason": str(e)}
+app.include_router(task_router)

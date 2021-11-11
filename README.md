@@ -148,4 +148,7 @@ TK
 ## Future work
 
 - Ensure queue exists.
-- Integrate with [Cloud Scheduler](https://cloud.google.com/scheduler/) to replace celery beat
+- Integrate with [Cloud Scheduler](https://cloud.google.com/scheduler/) to replace celery beat.
+- Make helper features for worker's side. Eg:
+  - Easier access to current retry count.
+  - API Exceptions to make GCP back-off.

@@ -38,6 +38,8 @@ def TaskRouteBuilder(
                 client=client,
                 pre_create_hook=pre_create_hook,
             )
+            if hasattr(self.endpoint, "_delayOptions"):
+                delayOpts.update(self.endpoint._delayOptions)
             delayOpts.update(options)
 
             return Delayer(

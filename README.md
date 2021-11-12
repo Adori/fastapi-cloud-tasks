@@ -51,6 +51,11 @@ make_dinner.options(countdown=1800).delay(...)
 
 ### Local
 
+Pre-requisites:
+
+- Create a task queue and copy the project id, location and queue name.
+- Install and ensure that ngrok works.
+
 We will need a an API endpoint to give to cloud tasks, so let us fire up ngrok on local
 
 ```sh
@@ -120,30 +125,120 @@ WARNING:  Hello task ran with payload: Triggered task
 ```
 
 Note: You can read complete working source code of the above example in [`examples/simple/main.py`](examples/simple/main.py)
+
 In the real world you'd have a separate process for task runner and actual task.
 
 ### Cloud Run
 
-TK - Explain setup for OIDC auth
-Check the full example at [`examples/full/tasks.py`](examples/full/tasks.py)
+Running on Cloud Run with authentication needs us to supply an OIDC token. To do that we can use a `hook`.
+
+Pre-requisites:
+
+- Create a task queue. Copy the project id, location and queue name.
+- Deploy the worker as a service on Cloud Run and copy it's URL.
+- Create a service account in cloud IAM and add `Cloud Run Invoker` role to it.
+
+We'll only edit the parts from above that we need changed from above example.
+
+```python
+# URL of the Cloud Run service
+base_url = "https://hello-randomchars-el.a.run.app"
+
+TaskRoute = TaskRouteBuilder(
+    base_url=base_url,
+    # Task queue, same as above.
+    queue_path=queue_path(...),
+    pre_create_hook=oidc_hook(
+        token=tasks_v2.OidcToken(
+            # Service account that you created
+            service_account_email="gelery@gcp-project-id.iam.gserviceaccount.com",
+            audience=base_url,
+        ),
+    ),
+)
+```
+
+Check the fleshed out example at [`examples/full/tasks.py`](examples/full/tasks.py)
 
 ## Configuration
 
-TK
+### TaskRouteBuilder
+
+Usage:
+
+```python
+TaskRoute = TaskRouteBuilder(...)
+task_router = APIRouter(route_class=TaskRoute)
+
+@task_router.get("/simple_task")
+def mySimpleTask():
+    return {}
+```
+
+- `base_url` - The URL of your worker FastAPI service.
+
+- `queue_path` - Full path of the Cloud Tasks queue. (Hint: use the util function `queue_path`)
+
+- `task_create_timeout` - How long should we wait before giving up on creating cloud task.
+
+- `pre_create_hook` - If you need to edit the `CreateTaskRequest` before sending it to Cloud Tasks (eg: Auth for Cloud Run), you can do that with this hook. See hooks section below for more.
+
+- `client` - If you need to override the Cloud Tasks client, pass the client here. (eg: changing credentials, transport etc)
+
+### Task level default options
+
+Usage:
+
+```python
+@task_router.get("/simple_task")
+@task_default_options(...)
+def mySimpleTask():
+    return {}
+```
+
+All options from above can be passed as `kwargs` to the decorator.
+
+Additional options:
+
+- `countdown` - Seconds in the future to schedule the task.
+- `task_id` - named task id for deduplication. (One task id will only be queued once.)
+
+Eg:
+
+```python
+# Trigger after 5 minutes
+@task_router.get("/simple_task")
+@task_default_options(countdown=300)
+def mySimpleTask():
+    return {}
+```
+
+### Delayer Options
+
+Usage:
+
+```python
+mySimpleTask.options(...).delay()
+```
+
+All options from above can be overriden per call (including TaskRouteBuilder options like `base_url`) with kwargs to the `options` function before calling delay.
+
+Example:
+
+```python
+# Trigger after 2 minutes
+mySimpleTask.options(countdown=120).delay()
+```
 
 ## Hooks
 
-TK
+We might need to override things in the task being sent to Cloud Tasks. The `pre_create_hook` allows us to do that.
 
-## How do I?
+Some hooks are included in the library.
 
-### Set custom deadline for task execution
-
-TK
-
-### Add Auth information
-
-TK
+- `oidc_hook` - Used to work with Cloud Run.
+- `deadline_hook` - Used to change the timeout for the worker of a task. (PS: this deadline is decided by the sender to the queue and not the worker)
+- `chained_hook` - If you need to chain multiple hooks together, you can do that with `chained_hook(hook1, hook2)`
 
 ## Future work
 

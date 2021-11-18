@@ -1,8 +1,8 @@
-# Gelery
+# FastAPI Cloud Tasks
 
 GCP's Cloud Tasks + FastAPI = Replacement for celery's async delayed tasks.
 
-Gelery + Cloud Run = Autoscaled delayed tasks.
+FastAPI Cloud Tasks + Cloud Run = Autoscaled delayed tasks.
 
 ## Concept
 
@@ -10,7 +10,7 @@ Gelery + Cloud Run = Autoscaled delayed tasks.
 
 [FastAPI](https://fastapi.tiangolo.com/tutorial/body/) makes us define complete schema and params for an HTTP endpoint.
 
-Gelery works by putting the two together:
+FastAPI Cloud Tasks works by putting the two together:
 
 - It adds a `.delay` method to existing routes on FastAPI.
 - When this method is called, it schedules a request with Cloud Tasks.
@@ -151,7 +151,7 @@ TaskRoute = TaskRouteBuilder(
     pre_create_hook=oidc_hook(
         token=tasks_v2.OidcToken(
             # Service account that you created
-            service_account_email="gelery@gcp-project-id.iam.gserviceaccount.com",
+            service_account_email="fastapi-cloud-tasks@gcp-project-id.iam.gserviceaccount.com",
             audience=base_url,
         ),
     ),

@@ -9,9 +9,9 @@ from fastapi.routing import APIRoute
 from google.cloud import tasks_v2
 from google.protobuf import timestamp_pb2
 
-from gelery.exception import MissingParamError, WrongTypeError
-from gelery.hooks import Hook
-from gelery.utils import err_val, taskMethod
+from fastapi_cloud_tasks.exception import MissingParamError, WrongTypeError
+from fastapi_cloud_tasks.hooks import Hook
+from fastapi_cloud_tasks.utils import err_val, taskMethod
 
 try:
     import ujson as json

@@ -3,8 +3,8 @@ import os
 
 from fastapi import FastAPI
 from fastapi.routing import APIRouter
-from gelery.taskroute import TaskRouteBuilder
-from gelery.utils import queue_path
+from fastapi_cloud_tasks.taskroute import TaskRouteBuilder
+from fastapi_cloud_tasks.utils import queue_path
 from pydantic import BaseModel
 
 TaskRoute = TaskRouteBuilder(

@@ -5,8 +5,8 @@ from typing import Callable
 from fastapi.routing import APIRoute
 from google.cloud import tasks_v2
 
-from gelery.delayer import Delayer
-from gelery.hooks import Hook, noop_hook
+from fastapi_cloud_tasks.delayer import Delayer
+from fastapi_cloud_tasks.hooks import Hook, noop_hook
 
 
 def TaskRouteBuilder(

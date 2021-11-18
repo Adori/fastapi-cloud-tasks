@@ -4,8 +4,8 @@ from examples.full.serializer import Payload
 from examples.full.settings import TASK_LISTENER_BASE_URL, TASK_OIDC_TOKEN, TASK_QUEUE_PATH
 from fastapi import FastAPI
 from fastapi.routing import APIRouter
-from gelery.hooks import chained_hook, deadline_hook, oidc_hook
-from gelery.taskroute import TaskRouteBuilder
+from fastapi_cloud_tasks.hooks import chained_hook, deadline_hook, oidc_hook
+from fastapi_cloud_tasks.taskroute import TaskRouteBuilder
 from google.protobuf import duration_pb2
 
 app = FastAPI()

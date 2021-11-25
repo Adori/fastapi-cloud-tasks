@@ -83,7 +83,8 @@ class Delayer:
         cookies = err_val(request_params_to_args(self.route.dependant.cookie_params, values))
         if len(cookies) > 0:
             headers["Cookies"] = "; ".join([f"{k}={v}" for (k, v) in cookies.items()])
-        return headers
+        # Always send string headers and skip all headers which are supposed to be sent by cloudtasks
+        return {str(k): str(v) for (k,v) in headers.items() if not str(k).startswith("x_cloudtasks_")}
 
     def _url(self, *, values):
         route = self.route

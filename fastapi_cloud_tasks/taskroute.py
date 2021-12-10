@@ -6,6 +6,7 @@ from fastapi.routing import APIRoute
 from google.cloud import tasks_v2
 
 from fastapi_cloud_tasks.delayer import Delayer
+from fastapi_cloud_tasks.exception import NoSchedulerProvided
 from fastapi_cloud_tasks.hooks import Hook, noop_hook
 
 
@@ -49,5 +50,11 @@ def TaskRouteBuilder(
 
         def delay(self, **kwargs):
             return self.delayOptions().delay(**kwargs)
+
+        def scheduleOptions(self, **options):
+            pass
+
+        def schedule(self, **kwargs):
+            return self.scheduleOptions().schedule(**kwargs)
 
     return TaskRouteMixin

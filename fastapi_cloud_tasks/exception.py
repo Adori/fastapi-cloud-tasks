@@ -7,3 +7,7 @@ class MissingParamError(MissingError):
 
 class WrongTypeError(PydanticValueError):
     msg_template = "Expected {field} to be of type {type}"
+
+
+class BadMethodException(Exception):
+    pass

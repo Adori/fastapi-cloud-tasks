@@ -2,8 +2,10 @@
 from typing import Dict, List, Tuple
 
 # Third Party Imports
-from google.cloud import tasks_v2
+from google.cloud import scheduler_v1, tasks_v2
 from pydantic.error_wrappers import ErrorWrapper
+
+from fastapi_cloud_tasks.exception import BadMethodException
 
 
 def queue_path(*, project, location, queue):
@@ -33,8 +35,28 @@ def taskMethod(methods):
     methods = list(methods)
     # Only crash if we're being bound
     if len(methods) > 1:
-        raise Exception("Can't trigger task with multiple methods")
+        raise BadMethodException("Can't trigger task with multiple methods")
     method = methodMap.get(methods[0], None)
     if method is None:
-        raise Exception(f"Unknown method {methods[0]}")
+        raise BadMethodException(f"Unknown method {methods[0]}")
+    return method
+
+
+def schedulerMethod(methods):
+    methodMap = {
+        "POST": scheduler_v1.HttpMethod.POST,
+        "GET": scheduler_v1.HttpMethod.GET,
+        "HEAD": scheduler_v1.HttpMethod.HEAD,
+        "PUT": scheduler_v1.HttpMethod.PUT,
+        "DELETE": scheduler_v1.HttpMethod.DELETE,
+        "PATCH": scheduler_v1.HttpMethod.PATCH,
+        "OPTIONS": scheduler_v1.HttpMethod.OPTIONS,
+    }
+    methods = list(methods)
+    # Only crash if we're being bound
+    if len(methods) > 1:
+        raise BadMethodException("Can't schedule task with multiple methods")
+    method = methodMap.get(methods[0], None)
+    if method is None:
+        raise BadMethodException(f"Unknown method {methods[0]}")
     return method

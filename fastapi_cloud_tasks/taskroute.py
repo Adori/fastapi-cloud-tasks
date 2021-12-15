@@ -3,26 +3,40 @@ from typing import Callable
 
 # Third Party Imports
 from fastapi.routing import APIRoute
-from google.cloud import tasks_v2
+from google.cloud import scheduler_v1, tasks_v2
 
 from fastapi_cloud_tasks.delayer import Delayer
-from fastapi_cloud_tasks.exception import NoSchedulerProvided
-from fastapi_cloud_tasks.hooks import Hook, noop_hook
+from fastapi_cloud_tasks.hooks import SchedulerHook, TaskHook, noop_hook, noop_scheduler_hook, noop_task_hook
+from fastapi_cloud_tasks.scheduler import Scheduler
 
 
 def TaskRouteBuilder(
     *,
     base_url: str,
     queue_path: str,
+    location_path: str = "",
     task_create_timeout: float = 10.0,
-    pre_create_hook: Hook = None,
+    schedule_create_timeout: float = 10.0,
+    pre_create_hook: TaskHook = None,
+    pre_scheduler_hook: SchedulerHook = None,
     client=None,
+    scheduler_client=None,
 ):
     if client is None:
         client = tasks_v2.CloudTasksClient()
 
+    if scheduler_client is None:
+        scheduler_client = scheduler_v1.CloudSchedulerClient()
+
     if pre_create_hook is None:
-        pre_create_hook = noop_hook
+        pre_create_hook = noop_task_hook
+
+    if pre_scheduler_hook is None:
+        pre_scheduler_hook = noop_scheduler_hook
+
+    if location_path == "":
+        q_path = client.parse_queue_path(queue_path)
+        location_path = scheduler_client.common_location_path(project=q_path["project"], location=q_path["location"])
 
     class TaskRouteMixin(APIRoute):
         def get_route_handler(self) -> Callable:
@@ -51,10 +65,12 @@ def TaskRouteBuilder(
         def delay(self, **kwargs):
             return self.delayOptions().delay(**kwargs)
 
-        def scheduleOptions(self, **options):
-            pass
+        def schedulerOptions(self, **options):
+            schedulerOpts = dict()
+            schedulerOpts.update(options)
+            return Scheduler(route=self, **schedulerOpts)
 
         def schedule(self, **kwargs):
-            return self.scheduleOptions().schedule(**kwargs)
+            return self.schedulerOptions().schedule(**kwargs)
 
     return TaskRouteMixin

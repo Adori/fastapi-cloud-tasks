@@ -4,7 +4,7 @@
 from fastapi.routing import APIRoute
 from google.cloud import scheduler_v1
 
-from fastapi_cloud_tasks.hooks import Hook
+from fastapi_cloud_tasks.hooks import SchedulerHook
 from fastapi_cloud_tasks.requester import Requester
 from fastapi_cloud_tasks.utils import schedulerMethod
 
@@ -15,19 +15,25 @@ class Scheduler(Requester):
         *,
         route: APIRoute,
         base_url: str,
-        queue_path: str,
-        task_create_timeout: float = 10.0,
+        location_path: str,
+        schedule: str,
         client: scheduler_v1.CloudSchedulerClient,
-        pre_create_hook: Hook,
-        countdown: int = 0,
-        task_id: str = None,
+        pre_create_hook: SchedulerHook,
+        name: str = "",
+        schedule_create_timeout: float = 10.0,
     ) -> None:
         super().__init__(route=route, base_url=base_url)
-        self.queue_path = queue_path
-        self.countdown = countdown
-        self.task_create_timeout = task_create_timeout
+        if name == "":
+            name = route.unique_id
 
-        self.task_id = task_id
+        location_parts = client.parse_common_location_path(location_path)
+
+        self.job_id = client.job_path(job=name, **location_parts)
+
+        self.location_path = location_path
+        self.cron_schedule = schedule
+        self.schedule_create_timeout = schedule_create_timeout
+
         self.method = schedulerMethod(route.methods)
         self.client = client
         self.pre_create_hook = pre_create_hook
@@ -45,6 +51,7 @@ class Scheduler(Requester):
 
         # Scheduled the task
         job = scheduler_v1.Job(http_target=request)
+        request = scheduler_v1.CreateJobRequest(parent=self.location_path)
         # TODO: try updating job, if it fails, create job
 
         # request = tasks_v2.CreateTaskRequest(parent=self.queue_path, task=task)

@@ -248,14 +248,13 @@ We might need to override things in the task being sent to Cloud Tasks. The `pre
 
 Some hooks are included in the library.
 
-- `oidc_hook` - Used to work with Cloud Run.
-- `deadline_hook` - Used to change the timeout for the worker of a task. (PS: this deadline is decided by the sender to the queue and not the worker)
+- `oidc_task_hook` / `oidc_scheduler_hook` - Used to pass OIDC token (for Cloud Run etc).
+- `deadline_task_hook` / `deadline_scheduler_hook` - Used to change the timeout for the worker of a task. (PS: this deadline is decided by the sender to the queue and not the worker)
 - `chained_hook` - If you need to chain multiple hooks together, you can do that with `chained_hook(hook1, hook2)`
 
 ## Future work
 
 - Ensure queue exists.
--  ✔️Integrate with [Cloud Scheduler](https://cloud.google.com/scheduler/) to replace celery beat.
 - Make helper features for worker's side. Eg:
   - Easier access to current retry count.
   - API Exceptions to make GCP back-off.

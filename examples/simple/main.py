@@ -15,9 +15,7 @@ from fastapi_cloud_tasks.utils import queue_path
 
 TaskRoute = TaskRouteBuilder(
     # Base URL where the task server will get hosted
-    base_url=os.getenv(
-        "TASK_LISTENER_BASE_URL", default="https://d860-35-208-83-220.ngrok.io"
-    ),
+    base_url=os.getenv("TASK_LISTENER_BASE_URL", default="https://d860-35-208-83-220.ngrok.io"),
     # Full queue path to which we'll send tasks.
     # Edit values below to match your project
     queue_path=queue_path(

@@ -3,6 +3,7 @@
 # Third Party Imports
 from fastapi.routing import APIRoute
 from google.cloud import scheduler_v1
+from google.protobuf import duration_pb2
 
 # Imports from this repository
 from fastapi_cloud_tasks.hooks import SchedulerHook
@@ -23,14 +24,21 @@ class Scheduler(Requester):
         name: str = "",
         schedule_create_timeout: float = 10.0,
         retry_config: scheduler_v1.RetryConfig = None,
-        time_zone: str = None
+        time_zone: str = "UTC",
+        force: bool = False,
     ) -> None:
         super().__init__(route=route, base_url=base_url)
         if name == "":
             name = route.unique_id
 
         if retry_config is None:
-            retry_config = scheduler_v1.RetryConfig(retry_count=5)
+            retry_config = scheduler_v1.RetryConfig(
+                retry_count=5,
+                max_retry_duration=duration_pb2.Duration(seconds=0),
+                min_backoff_duration=duration_pb2.Duration(seconds=5),
+                max_backoff_duration=duration_pb2.Duration(seconds=120),
+                max_doublings=5,
+            )
 
         self.retry_config = retry_config
         location_parts = client.parse_common_location_path(location_path)
@@ -45,6 +53,7 @@ class Scheduler(Requester):
         self.method = schedulerMethod(route.methods)
         self.client = client
         self.pre_scheduler_hook = pre_scheduler_hook
+        self.force = force
 
     def schedule(self, **kwargs):
         # Create http request
@@ -63,25 +72,36 @@ class Scheduler(Requester):
             http_target=request,
             schedule=self.cron_schedule,
             retry_config=self.retry_config,
+            time_zone=self.time_zone,
         )
-        if self.time_zone is not None:
-            job.time_zone = self.time_zone
+
         request = scheduler_v1.CreateJobRequest(parent=self.location_path, job=job)
 
         request = self.pre_scheduler_hook(request)
 
-        # Delete and create job
-        self.delete()
-        return self.client.create_job(
-            request=request, timeout=self.schedule_create_timeout
-        )
+        if self.force or self._has_changed(request=request):
+            # Delete and create job
+            self.delete()
+            self.client.create_job(request=request, timeout=self.schedule_create_timeout)
+
+    def _has_changed(self, request: scheduler_v1.CreateJobRequest):
+        try:
+            job = self.client.get_job(name=request.job.name)
+            # Remove things that are either output only or GCP adds by default
+            job.user_update_time = None
+            job.state = None
+            job.schedule_time = None
+            del job.http_target.headers["User-Agent"]
+            # Proto compare works directly with `__eq__`
+            return job != request.job
+        except Exception:
+            return True
+        return False
 
     def delete(self):
         # We return true or exception because you could have the delete code on multiple instances
         try:
-            self.client.delete_job(
-                name=self.job_id, timeout=self.schedule_create_timeout
-            )
+            self.client.delete_job(name=self.job_id, timeout=self.schedule_create_timeout)
             return True
         except Exception as ex:
             return ex

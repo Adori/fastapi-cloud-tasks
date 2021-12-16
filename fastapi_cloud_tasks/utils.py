@@ -13,15 +13,11 @@ from fastapi_cloud_tasks.exception import BadMethodException
 
 
 def location_path(*, project, location):
-    return scheduler_v1.CloudSchedulerClient.common_location_path(
-        project=project, location=location
-    )
+    return scheduler_v1.CloudSchedulerClient.common_location_path(project=project, location=location)
 
 
 def queue_path(*, project, location, queue):
-    return tasks_v2.CloudTasksClient.queue_path(
-        project=project, location=location, queue=queue
-    )
+    return tasks_v2.CloudTasksClient.queue_path(project=project, location=location, queue=queue)
 
 
 def err_val(resp: Tuple[Dict, List[ErrorWrapper]]):

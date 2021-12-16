@@ -60,9 +60,7 @@ class Delayer(Requester):
 
         request = self.pre_create_hook(request)
 
-        return self.client.create_task(
-            request=request, timeout=self.task_create_timeout
-        )
+        return self.client.create_task(request=request, timeout=self.task_create_timeout)
 
     def _schedule(self):
         if self.countdown is None or self.countdown <= 0:

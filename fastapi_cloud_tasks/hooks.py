@@ -1,6 +1,9 @@
+# Standard Library Imports
 from typing import Callable
 
-from google.cloud import scheduler_v1, tasks_v2
+# Third Party Imports
+from google.cloud import scheduler_v1
+from google.cloud import tasks_v2
 from google.protobuf import duration_pb2
 
 TaskHook = Callable[[tasks_v2.CreateTaskRequest], tasks_v2.CreateTaskRequest]
@@ -21,7 +24,9 @@ def chained_hook(*hooks):
 
 
 def oidc_scheduler_hook(token: tasks_v2.OidcToken) -> SchedulerHook:
-    def add_token(request: scheduler_v1.CreateJobRequest) -> scheduler_v1.CreateJobRequest:
+    def add_token(
+        request: scheduler_v1.CreateJobRequest,
+    ) -> scheduler_v1.CreateJobRequest:
         request.job.http_target.oidc_token = token
         return request
 
@@ -37,7 +42,9 @@ def oidc_task_hook(token: scheduler_v1.OidcToken) -> TaskHook:
 
 
 def oauth_scheduler_hook(token: scheduler_v1.OAuthToken) -> SchedulerHook:
-    def add_token(request: scheduler_v1.CreateJobRequest) -> scheduler_v1.CreateJobRequest:
+    def add_token(
+        request: scheduler_v1.CreateJobRequest,
+    ) -> scheduler_v1.CreateJobRequest:
         request.job.http_target.oauth_token = token
         return request
 
@@ -53,7 +60,9 @@ def oauth_task_hook(token: tasks_v2.OAuthToken) -> TaskHook:
 
 
 def deadline_scheduler_hook(duration: duration_pb2.Duration) -> SchedulerHook:
-    def deadline(request: scheduler_v1.CreateJobRequest) -> scheduler_v1.CreateJobRequest:
+    def deadline(
+        request: scheduler_v1.CreateJobRequest,
+    ) -> scheduler_v1.CreateJobRequest:
         request.job.attempt_deadline = duration
         return request
 

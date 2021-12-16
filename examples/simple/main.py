@@ -1,17 +1,23 @@
+# Standard Library Imports
 import logging
 import os
 import typing
 
+# Third Party Imports
 from fastapi import FastAPI
-from fastapi.routing import APIRouter
 from fastapi.params import Header
+from fastapi.routing import APIRouter
+from pydantic import BaseModel
+
+# Imports from this repository
 from fastapi_cloud_tasks.taskroute import TaskRouteBuilder
 from fastapi_cloud_tasks.utils import queue_path
-from pydantic import BaseModel
 
 TaskRoute = TaskRouteBuilder(
     # Base URL where the task server will get hosted
-    base_url=os.getenv("TASK_LISTENER_BASE_URL", default="https://d860-35-208-83-220.ngrok.io"),
+    base_url=os.getenv(
+        "TASK_LISTENER_BASE_URL", default="https://d860-35-208-83-220.ngrok.io"
+    ),
     # Full queue path to which we'll send tasks.
     # Edit values below to match your project
     queue_path=queue_path(
@@ -31,7 +37,10 @@ class Payload(BaseModel):
 
 
 @task_router.post("/hello")
-async def hello(p: Payload = Payload(message="Default"), x_cloudtasks_taskretrycount: typing.Optional[int] = Header(0)):
+async def hello(
+    p: Payload = Payload(message="Default"),
+    x_cloudtasks_taskretrycount: typing.Optional[int] = Header(0),
+):
     if x_cloudtasks_taskretrycount < 5:
         raise Exception("Noooo")
     logger.warning(f"Hello task ran with payload: {p.message}")

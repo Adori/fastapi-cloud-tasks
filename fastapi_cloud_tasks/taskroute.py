@@ -3,10 +3,14 @@ from typing import Callable
 
 # Third Party Imports
 from fastapi.routing import APIRoute
-from google.cloud import scheduler_v1, tasks_v2
+from google.cloud import scheduler_v1
+from google.cloud import tasks_v2
 
+# Imports from this repository
 from fastapi_cloud_tasks.delayer import Delayer
-from fastapi_cloud_tasks.hooks import SchedulerHook, TaskHook, noop_hook
+from fastapi_cloud_tasks.hooks import SchedulerHook
+from fastapi_cloud_tasks.hooks import TaskHook
+from fastapi_cloud_tasks.hooks import noop_hook
 from fastapi_cloud_tasks.scheduler import Scheduler
 
 

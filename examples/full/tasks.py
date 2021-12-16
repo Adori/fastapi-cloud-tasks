@@ -1,23 +1,23 @@
+# Standard Library Imports
 import logging
 
-from examples.full.serializer import Payload
-from examples.full.settings import (
-    SCHEDULER_OIDC_TOKEN,
-    TASK_LISTENER_BASE_URL,
-    TASK_OIDC_TOKEN,
-    TASK_QUEUE_PATH,
-)
+# Third Party Imports
 from fastapi import FastAPI
 from fastapi.routing import APIRouter
-from fastapi_cloud_tasks.hooks import (
-    chained_hook,
-    deadline_scheduler_hook,
-    deadline_task_hook,
-    oidc_scheduler_hook,
-    oidc_task_hook,
-)
-from fastapi_cloud_tasks.taskroute import TaskRouteBuilder
 from google.protobuf import duration_pb2
+
+# Imports from this repository
+from examples.full.serializer import Payload
+from examples.full.settings import SCHEDULER_OIDC_TOKEN
+from examples.full.settings import TASK_LISTENER_BASE_URL
+from examples.full.settings import TASK_OIDC_TOKEN
+from examples.full.settings import TASK_QUEUE_PATH
+from fastapi_cloud_tasks.hooks import chained_hook
+from fastapi_cloud_tasks.hooks import deadline_scheduler_hook
+from fastapi_cloud_tasks.hooks import deadline_task_hook
+from fastapi_cloud_tasks.hooks import oidc_scheduler_hook
+from fastapi_cloud_tasks.hooks import oidc_task_hook
+from fastapi_cloud_tasks.taskroute import TaskRouteBuilder
 
 app = FastAPI()
 

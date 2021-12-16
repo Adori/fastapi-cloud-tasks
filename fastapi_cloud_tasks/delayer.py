@@ -6,6 +6,7 @@ from fastapi.routing import APIRoute
 from google.cloud import tasks_v2
 from google.protobuf import timestamp_pb2
 
+# Imports from this repository
 from fastapi_cloud_tasks.hooks import TaskHook
 from fastapi_cloud_tasks.requester import Requester
 from fastapi_cloud_tasks.utils import taskMethod
@@ -59,7 +60,9 @@ class Delayer(Requester):
 
         request = self.pre_create_hook(request)
 
-        return self.client.create_task(request=request, timeout=self.task_create_timeout)
+        return self.client.create_task(
+            request=request, timeout=self.task_create_timeout
+        )
 
     def _schedule(self):
         if self.countdown is None or self.countdown <= 0:

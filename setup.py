@@ -1,3 +1,4 @@
+# Third Party Imports
 from setuptools import setup
 
 with open("version.txt") as f:

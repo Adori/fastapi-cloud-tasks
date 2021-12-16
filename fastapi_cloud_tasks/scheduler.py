@@ -4,6 +4,7 @@
 from fastapi.routing import APIRoute
 from google.cloud import scheduler_v1
 
+# Imports from this repository
 from fastapi_cloud_tasks.hooks import SchedulerHook
 from fastapi_cloud_tasks.requester import Requester
 from fastapi_cloud_tasks.utils import schedulerMethod
@@ -71,12 +72,16 @@ class Scheduler(Requester):
 
         # Delete and create job
         self.delete()
-        return self.client.create_job(request=request, timeout=self.schedule_create_timeout)
+        return self.client.create_job(
+            request=request, timeout=self.schedule_create_timeout
+        )
 
     def delete(self):
         # We return true or exception because you could have the delete code on multiple instances
         try:
-            self.client.delete_job(name=self.job_id, timeout=self.schedule_create_timeout)
+            self.client.delete_job(
+                name=self.job_id, timeout=self.schedule_create_timeout
+            )
             return True
         except Exception as ex:
             return ex

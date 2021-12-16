@@ -3,8 +3,8 @@ import os
 from fastapi_cloud_tasks.utils import queue_path
 from google.cloud import scheduler_v1, tasks_v2
 
-TASK_LISTENER_BASE_URL = os.getenv("TASK_LISTENER_BASE_URL", default="http://example.com")
-TASK_PROJECT_ID = os.getenv("TASK_PROJECT_ID", default="sample-project")
+TASK_LISTENER_BASE_URL = os.getenv("TASK_LISTENER_BASE_URL", default="https://b22d-35-207-241-4.ngrok.io")
+TASK_PROJECT_ID = os.getenv("TASK_PROJECT_ID", default="applied-honor-105708")
 TASK_LOCATION = os.getenv("TASK_LOCATION", default="asia-south1")
 TASK_QUEUE = os.getenv("TASK_QUEUE", default="test-queue")
 

@@ -2,6 +2,8 @@
 
 GCP's Cloud Tasks + FastAPI = Replacement for celery's async delayed tasks.
 
+GCP's Cloud Scheduler + FastAPI = Replacement for celery beat.
+
 FastAPI Cloud Tasks + Cloud Run = Autoscaled delayed tasks.
 
 ## Concept
@@ -10,13 +12,18 @@ FastAPI Cloud Tasks + Cloud Run = Autoscaled delayed tasks.
 
 [FastAPI](https://fastapi.tiangolo.com/tutorial/body/) makes us define complete schema and params for an HTTP endpoint.
 
-FastAPI Cloud Tasks works by putting the two together:
+
+[`Cloud Scheduler`](https://cloud.google.com/scheduler) allows us to schedule recurring HTTP requests in the future.
+
+FastAPI Cloud Tasks works by putting the three together:
 
 - It adds a `.delay` method to existing routes on FastAPI.
 - When this method is called, it schedules a request with Cloud Tasks.
 - The task worker is a regular FastAPI server which gets called by Cloud Tasks.
+- It adds a `.scheduler` method to existing routes on FastAPI.
+- When this method is called, it schedules a recurring job with Cloud Scheduler.
 
-If we host the task worker on Cloud Run, we get free autoscaling.
+If we host the task worker on Cloud Run, we get autoscaling workers.
 
 ## Pseudocode
 
@@ -47,6 +54,11 @@ If we want to trigger the task 30 minutes later
 make_dinner.options(countdown=1800).delay(...)
 ```
 
+If we want to schedule it to run every evening at 7PM IST
+
+```python
+make_dinner.scheduler(name="test-make-dinner-at-7PM-IST", schedule="0 19 * * *", time_zone="Asia/Kolkata").schedule(...)
+```
 ## Running
 
 ### Local

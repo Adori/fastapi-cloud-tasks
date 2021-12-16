@@ -22,6 +22,7 @@ class Scheduler(Requester):
         name: str = "",
         schedule_create_timeout: float = 10.0,
         retry_config: scheduler_v1.RetryConfig = None,
+        time_zone: str = None
     ) -> None:
         super().__init__(route=route, base_url=base_url)
         if name == "":
@@ -34,6 +35,7 @@ class Scheduler(Requester):
         location_parts = client.parse_common_location_path(location_path)
 
         self.job_id = client.job_path(job=name, **location_parts)
+        self.time_zone = time_zone
 
         self.location_path = location_path
         self.cron_schedule = schedule
@@ -61,6 +63,8 @@ class Scheduler(Requester):
             schedule=self.cron_schedule,
             retry_config=self.retry_config,
         )
+        if self.time_zone is not None:
+            job.time_zone = self.time_zone
         request = scheduler_v1.CreateJobRequest(parent=self.location_path, job=job)
 
         request = self.pre_scheduler_hook(request)
@@ -72,9 +76,7 @@ class Scheduler(Requester):
     def delete(self):
         # We return true or exception because you could have the delete code on multiple instances
         try:
-            self.client.delete_job(
-                scheduler_v1.DeleteJobRequest(name=self.job_id), timeout=self.schedule_create_timeout
-            )
+            self.client.delete_job(name=self.job_id, timeout=self.schedule_create_timeout)
             return True
         except Exception as ex:
             return ex

@@ -148,7 +148,7 @@ TaskRoute = TaskRouteBuilder(
     base_url=base_url,
     # Task queue, same as above.
     queue_path=queue_path(...),
-    pre_create_hook=oidc_hook(
+    pre_create_hook=oidc_task_hook(
         token=tasks_v2.OidcToken(
             # Service account that you created
             service_account_email="fastapi-cloud-tasks@gcp-project-id.iam.gserviceaccount.com",

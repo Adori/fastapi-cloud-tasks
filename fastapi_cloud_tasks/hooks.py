@@ -23,7 +23,7 @@ def chained_hook(*hooks):
     return chain
 
 
-def oidc_scheduler_hook(token: tasks_v2.OidcToken) -> SchedulerHook:
+def oidc_scheduler_hook(token: scheduler_v1.OidcToken) -> SchedulerHook:
     def add_token(
         request: scheduler_v1.CreateJobRequest,
     ) -> scheduler_v1.CreateJobRequest:
@@ -33,7 +33,7 @@ def oidc_scheduler_hook(token: tasks_v2.OidcToken) -> SchedulerHook:
     return add_token
 
 
-def oidc_task_hook(token: scheduler_v1.OidcToken) -> TaskHook:
+def oidc_task_hook(token: tasks_v2.OidcToken) -> TaskHook:
     def add_token(request: tasks_v2.CreateTaskRequest) -> tasks_v2.CreateTaskRequest:
         request.task.http_request.oidc_token = token
         return request

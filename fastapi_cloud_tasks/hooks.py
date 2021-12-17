@@ -6,8 +6,8 @@ from google.cloud import scheduler_v1
 from google.cloud import tasks_v2
 from google.protobuf import duration_pb2
 
-TaskHook = Callable[[tasks_v2.CreateTaskRequest], tasks_v2.CreateTaskRequest]
-SchedulerHook = Callable[[scheduler_v1.CreateJobRequest], scheduler_v1.CreateJobRequest]
+DelayedTaskHook = Callable[[tasks_v2.CreateTaskRequest], tasks_v2.CreateTaskRequest]
+ScheduledHook = Callable[[scheduler_v1.CreateJobRequest], scheduler_v1.CreateJobRequest]
 
 
 def noop_hook(request):
@@ -23,7 +23,7 @@ def chained_hook(*hooks):
     return chain
 
 
-def oidc_scheduler_hook(token: scheduler_v1.OidcToken) -> SchedulerHook:
+def oidc_scheduled_hook(token: scheduler_v1.OidcToken) -> ScheduledHook:
     def add_token(
         request: scheduler_v1.CreateJobRequest,
     ) -> scheduler_v1.CreateJobRequest:
@@ -33,7 +33,7 @@ def oidc_scheduler_hook(token: scheduler_v1.OidcToken) -> SchedulerHook:
     return add_token
 
 
-def oidc_task_hook(token: tasks_v2.OidcToken) -> TaskHook:
+def oidc_delayed_hook(token: tasks_v2.OidcToken) -> DelayedTaskHook:
     def add_token(request: tasks_v2.CreateTaskRequest) -> tasks_v2.CreateTaskRequest:
         request.task.http_request.oidc_token = token
         return request
@@ -41,7 +41,7 @@ def oidc_task_hook(token: tasks_v2.OidcToken) -> TaskHook:
     return add_token
 
 
-def oauth_scheduler_hook(token: scheduler_v1.OAuthToken) -> SchedulerHook:
+def oauth_scheduled_hook(token: scheduler_v1.OAuthToken) -> ScheduledHook:
     def add_token(
         request: scheduler_v1.CreateJobRequest,
     ) -> scheduler_v1.CreateJobRequest:
@@ -51,7 +51,7 @@ def oauth_scheduler_hook(token: scheduler_v1.OAuthToken) -> SchedulerHook:
     return add_token
 
 
-def oauth_task_hook(token: tasks_v2.OAuthToken) -> TaskHook:
+def oauth_delayed_hook(token: tasks_v2.OAuthToken) -> DelayedTaskHook:
     def add_token(request: tasks_v2.CreateTaskRequest) -> tasks_v2.CreateTaskRequest:
         request.task.http_request.oauth_token = token
         return request
@@ -59,7 +59,7 @@ def oauth_task_hook(token: tasks_v2.OAuthToken) -> TaskHook:
     return add_token
 
 
-def deadline_scheduler_hook(duration: duration_pb2.Duration) -> SchedulerHook:
+def deadline_scheduled_hook(duration: duration_pb2.Duration) -> ScheduledHook:
     def deadline(
         request: scheduler_v1.CreateJobRequest,
     ) -> scheduler_v1.CreateJobRequest:
@@ -69,7 +69,7 @@ def deadline_scheduler_hook(duration: duration_pb2.Duration) -> SchedulerHook:
     return deadline
 
 
-def deadline_task_hook(duration: duration_pb2.Duration) -> TaskHook:
+def deadline_delayed_hook(duration: duration_pb2.Duration) -> DelayedTaskHook:
     def deadline(request: tasks_v2.CreateTaskRequest) -> tasks_v2.CreateTaskRequest:
         request.task.dispatch_deadline = duration
         return request

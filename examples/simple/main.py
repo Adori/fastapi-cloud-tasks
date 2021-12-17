@@ -10,10 +10,10 @@ from fastapi.routing import APIRouter
 from pydantic import BaseModel
 
 # Imports from this repository
-from fastapi_cloud_tasks.taskroute import TaskRouteBuilder
+from fastapi_cloud_tasks.delayed_route import DelayedRouteBuilder
 from fastapi_cloud_tasks.utils import queue_path
 
-TaskRoute = TaskRouteBuilder(
+DelayedRoute = DelayedRouteBuilder(
     # Base URL where the task server will get hosted
     base_url=os.getenv("TASK_LISTENER_BASE_URL", default="https://d860-35-208-83-220.ngrok.io"),
     # Full queue path to which we'll send tasks.
@@ -25,7 +25,7 @@ TaskRoute = TaskRouteBuilder(
     ),
 )
 
-task_router = APIRouter(route_class=TaskRoute, prefix="/tasks")
+task_router = APIRouter(route_class=DelayedRoute, prefix="/tasks")
 
 logger = logging.getLogger("uvicorn")
 

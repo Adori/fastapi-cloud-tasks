@@ -6,7 +6,7 @@ from google.cloud import scheduler_v1
 from google.protobuf import duration_pb2
 
 # Imports from this repository
-from fastapi_cloud_tasks.hooks import SchedulerHook
+from fastapi_cloud_tasks.hooks import ScheduledHook
 from fastapi_cloud_tasks.requester import Requester
 from fastapi_cloud_tasks.utils import schedulerMethod
 
@@ -20,9 +20,9 @@ class Scheduler(Requester):
         location_path: str,
         schedule: str,
         client: scheduler_v1.CloudSchedulerClient,
-        pre_scheduler_hook: SchedulerHook,
+        pre_create_hook: ScheduledHook,
         name: str = "",
-        schedule_create_timeout: float = 10.0,
+        job_create_timeout: float = 10.0,
         retry_config: scheduler_v1.RetryConfig = None,
         time_zone: str = "UTC",
         force: bool = False,
@@ -48,11 +48,11 @@ class Scheduler(Requester):
 
         self.location_path = location_path
         self.cron_schedule = schedule
-        self.schedule_create_timeout = schedule_create_timeout
+        self.job_create_timeout = job_create_timeout
 
         self.method = schedulerMethod(route.methods)
         self.client = client
-        self.pre_scheduler_hook = pre_scheduler_hook
+        self.pre_create_hook = pre_create_hook
         self.force = force
 
     def schedule(self, **kwargs):
@@ -77,12 +77,13 @@ class Scheduler(Requester):
 
         request = scheduler_v1.CreateJobRequest(parent=self.location_path, job=job)
 
-        request = self.pre_scheduler_hook(request)
+        request = self.pre_create_hook(request)
 
         if self.force or self._has_changed(request=request):
+            print("Changed")
             # Delete and create job
             self.delete()
-            self.client.create_job(request=request, timeout=self.schedule_create_timeout)
+            self.client.create_job(request=request, timeout=self.job_create_timeout)
 
     def _has_changed(self, request: scheduler_v1.CreateJobRequest):
         try:
@@ -90,6 +91,8 @@ class Scheduler(Requester):
             # Remove things that are either output only or GCP adds by default
             job.user_update_time = None
             job.state = None
+            job.status = None
+            job.last_attempt_time = None
             job.schedule_time = None
             del job.http_target.headers["User-Agent"]
             # Proto compare works directly with `__eq__`
@@ -101,7 +104,7 @@ class Scheduler(Requester):
     def delete(self):
         # We return true or exception because you could have the delete code on multiple instances
         try:
-            self.client.delete_job(name=self.job_id, timeout=self.schedule_create_timeout)
+            self.client.delete_job(name=self.job_id, timeout=self.job_create_timeout)
             return True
         except Exception as ex:
             return ex

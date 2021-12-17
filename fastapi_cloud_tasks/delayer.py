@@ -7,7 +7,7 @@ from google.cloud import tasks_v2
 from google.protobuf import timestamp_pb2
 
 # Imports from this repository
-from fastapi_cloud_tasks.hooks import TaskHook
+from fastapi_cloud_tasks.hooks import DelayedTaskHook
 from fastapi_cloud_tasks.requester import Requester
 from fastapi_cloud_tasks.utils import taskMethod
 
@@ -21,7 +21,7 @@ class Delayer(Requester):
         queue_path: str,
         task_create_timeout: float = 10.0,
         client: tasks_v2.CloudTasksClient,
-        pre_create_hook: TaskHook,
+        pre_create_hook: DelayedTaskHook,
         countdown: int = 0,
         task_id: str = None,
     ) -> None:

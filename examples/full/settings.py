@@ -9,7 +9,7 @@ from google.cloud import tasks_v2
 from fastapi_cloud_tasks.utils import location_path
 from fastapi_cloud_tasks.utils import queue_path
 
-TASK_LISTENER_BASE_URL = os.getenv("TASK_LISTENER_BASE_URL", default="https://65fb-35-207-241-4.ngrok.io")
+TASK_LISTENER_BASE_URL = os.getenv("TASK_LISTENER_BASE_URL", default="https://645e-35-207-241-4.ngrok.io")
 TASK_PROJECT_ID = os.getenv("TASK_PROJECT_ID", default="sample-project")
 TASK_LOCATION = os.getenv("TASK_LOCATION", default="asia-south1")
 SCHEDULED_LOCATION = os.getenv("SCHEDULED_LOCATION", default="us-central1")

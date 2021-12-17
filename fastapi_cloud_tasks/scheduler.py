@@ -80,7 +80,6 @@ class Scheduler(Requester):
         request = self.pre_create_hook(request)
 
         if self.force or self._has_changed(request=request):
-            print("Changed")
             # Delete and create job
             self.delete()
             self.client.create_job(request=request, timeout=self.job_create_timeout)

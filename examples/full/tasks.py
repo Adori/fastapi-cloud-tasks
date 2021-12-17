@@ -75,7 +75,7 @@ async def scheduled_hello(p: Payload = Payload(message="Default")):
 
 scheduled_hello.scheduler(
     name="testing-examples-scheduled-hello",
-    schedule="* * * * *",
+    schedule="*/5 * * * *",
     time_zone="Asia/Kolkata",
 ).schedule(p=Payload(message="Scheduled"))
 

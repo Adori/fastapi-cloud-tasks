@@ -1,4 +1,6 @@
-from pydantic.errors import MissingError, PydanticValueError
+# Third Party Imports
+from pydantic.errors import MissingError
+from pydantic.errors import PydanticValueError
 
 
 class MissingParamError(MissingError):
@@ -7,3 +9,7 @@ class MissingParamError(MissingError):
 
 class WrongTypeError(PydanticValueError):
     msg_template = "Expected {field} to be of type {type}"
+
+
+class BadMethodException(Exception):
+    pass

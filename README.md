@@ -2,6 +2,8 @@
 
 GCP's Cloud Tasks + FastAPI = Replacement for celery's async delayed tasks.
 
+GCP's Cloud Scheduler + FastAPI = Replacement for celery beat.
+
 FastAPI Cloud Tasks + Cloud Run = Autoscaled delayed tasks.
 
 ## Concept
@@ -10,29 +12,43 @@ FastAPI Cloud Tasks + Cloud Run = Autoscaled delayed tasks.
 
 [FastAPI](https://fastapi.tiangolo.com/tutorial/body/) makes us define complete schema and params for an HTTP endpoint.
 
-FastAPI Cloud Tasks works by putting the two together:
+
+[`Cloud Scheduler`](https://cloud.google.com/scheduler) allows us to schedule recurring HTTP requests in the future.
+
+FastAPI Cloud Tasks works by putting the three together:
 
 - It adds a `.delay` method to existing routes on FastAPI.
 - When this method is called, it schedules a request with Cloud Tasks.
 - The task worker is a regular FastAPI server which gets called by Cloud Tasks.
+- It adds a `.scheduler` method to existing routes on FastAPI.
+- When this method is called, it schedules a recurring job with Cloud Scheduler.
 
-If we host the task worker on Cloud Run, we get free autoscaling.
+If we host the task worker on Cloud Run, we get autoscaling workers.
 
 ## Pseudocode
 
 In practice, this is what it looks like:
 
 ```python
-router = APIRouter(route_class=TaskRouteBuilder(...))
+delayed_router = APIRouter(route_class=DelayedRouteBuilder(...))
+scheduled_router = APIRouter(route_class=ScheduledRouteBuilder(...))
 
 class Recipe(BaseModel):
     ingredients: List[str]
 
-@router.post("/{restaurant}/make_dinner")
-async def make_dinner(restaurant: str, recipe: Recipe,):
+@delayed_router.post("/{restaurant}/make_dinner")
+async def make_dinner(restaurant: str, recipe: Recipe):
     # Do a ton of work here.
 
-app.include_router(router)
+@scheduled_router.post("/home_cook")
+async def home_cook(recipe: Recipe):
+    # Make my own food
+
+app.include_router(delayed_router)
+app.include_router(scheduled_router)
+
+# If you wan to make your own breakfast every morning at 7AM IST.
+home_cook.scheduler(name="test-home-cook-at-7AM-IST", schedule="0 7 * * *", time_zone="Asia/Kolkata").schedule(recipe=Recipe(ingredients=["Milk","Cereal"]))
 ```
 
 Now we can trigger the task with
@@ -71,9 +87,9 @@ Forwarding                    http://feda-49-207-221-153.ngrok.io -> http://loca
 ```python
 # complete file: examples/simple/main.py
 
-# First we construct our TaskRoute class with all relevant settings
+# First we construct our DelayedRoute class with all relevant settings
 # This can be done once across the entire project
-TaskRoute = TaskRouteBuilder(
+DelayedRoute = DelayedRouteBuilder(
     base_url="http://feda-49-207-221-153.ngrok.io",
     queue_path=queue_path(
         project="gcp-project-id",
@@ -82,13 +98,12 @@ TaskRoute = TaskRouteBuilder(
     ),
 )
 
-# Wherever we use
-task_router = APIRouter(route_class=TaskRoute, prefix="/tasks")
+delayed_router = APIRouter(route_class=DelayedRoute, prefix="/tasks")
 
 class Payload(BaseModel):
     message: str
 
-@task_router.post("/hello")
+@delayed_router.post("/hello")
 async def hello(p: Payload = Payload(message="Default")):
     logger.warning(f"Hello task ran with payload: {p.message}")
 
@@ -102,7 +117,7 @@ async def trigger():
     hello.delay(p=Payload(message="Triggered task"))
     return {"message": "Hello task triggered"}
 
-app.include_router(task_router)
+app.include_router(delayed_router)
 
 ```
 
@@ -144,11 +159,11 @@ We'll only edit the parts from above that we need changed from above example.
 # URL of the Cloud Run service
 base_url = "https://hello-randomchars-el.a.run.app"
 
-TaskRoute = TaskRouteBuilder(
+DelayedRoute = DelayedRouteBuilder(
     base_url=base_url,
     # Task queue, same as above.
     queue_path=queue_path(...),
-    pre_create_hook=oidc_hook(
+    pre_create_hook=oidc_task_hook(
         token=tasks_v2.OidcToken(
             # Service account that you created
             service_account_email="fastapi-cloud-tasks@gcp-project-id.iam.gserviceaccount.com",
@@ -162,15 +177,15 @@ Check the fleshed out example at [`examples/full/tasks.py`](examples/full/tasks.
 
 ## Configuration
 
-### TaskRouteBuilder
+### DelayedRouteBuilder
 
 Usage:
 
 ```python
-TaskRoute = TaskRouteBuilder(...)
-task_router = APIRouter(route_class=TaskRoute)
+DelayedRoute = DelayedRouteBuilder(...)
+delayed_router = APIRouter(route_class=DelayedRoute)
 
-@task_router.get("/simple_task")
+@delayed_router.get("/simple_task")
 def mySimpleTask():
     return {}
 ```
@@ -185,7 +200,7 @@ def mySimpleTask():
 
 - `client` - If you need to override the Cloud Tasks client, pass the client here. (eg: changing credentials, transport etc)
 
-### Task level default options
+#### Task level default options
 
 Usage:
 
@@ -213,7 +228,7 @@ def mySimpleTask():
     return {}
 ```
 
-### Delayer Options
+#### Delayer Options
 
 Usage:
 
@@ -221,7 +236,7 @@ Usage:
 mySimpleTask.options(...).delay()
 ```
 
-All options from above can be overriden per call (including TaskRouteBuilder options like `base_url`) with kwargs to the `options` function before calling delay.
+All options from above can be overriden per call (including DelayedRouteBuilder options like `base_url`) with kwargs to the `options` function before calling delay.
 
 Example:
 
@@ -230,20 +245,36 @@ Example:
 mySimpleTask.options(countdown=120).delay()
 ```
 
+### ScheduledRouteBuilder
+
+Usage:
+
+```python
+ScheduledRoute = ScheduledRouteBuilder(...)
+scheduled_router = APIRouter(route_class=ScheduledRoute)
+
+@scheduled_router.get("/simple_scheduled_task")
+def mySimpleScheduledTask():
+    return {}
+
+
+mySimpleScheduledTask.scheduler(name="simple_scheduled_task", schedule="* * * * *").schedule()
+```
+
+
 ## Hooks
 
 We might need to override things in the task being sent to Cloud Tasks. The `pre_create_hook` allows us to do that.
 
 Some hooks are included in the library.
 
-- `oidc_hook` - Used to work with Cloud Run.
-- `deadline_hook` - Used to change the timeout for the worker of a task. (PS: this deadline is decided by the sender to the queue and not the worker)
+- `oidc_delayed_hook` / `oidc_scheduled_hook` - Used to pass OIDC token (for Cloud Run etc).
+- `deadline_delayed_hook` / `deadline_scheduled_hook` - Used to change the timeout for the worker of a task. (PS: this deadline is decided by the sender to the queue and not the worker)
 - `chained_hook` - If you need to chain multiple hooks together, you can do that with `chained_hook(hook1, hook2)`
 
 ## Future work
 
 - Ensure queue exists.
-- Integrate with [Cloud Scheduler](https://cloud.google.com/scheduler/) to replace celery beat.
 - Make helper features for worker's side. Eg:
   - Easier access to current retry count.
   - API Exceptions to make GCP back-off.

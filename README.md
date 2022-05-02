@@ -1,12 +1,20 @@
 # FastAPI Cloud Tasks
 
+Strongly typed background tasks with FastAPI and CloudTasks!
+
+## Installation
+
+```
+pip install fastapi-cloud-tasks
+```
+
+## Concept
+
 GCP's Cloud Tasks + FastAPI = Replacement for celery's async delayed tasks.
 
 GCP's Cloud Scheduler + FastAPI = Replacement for celery beat.
 
 FastAPI Cloud Tasks + Cloud Run = Autoscaled delayed tasks.
-
-## Concept
 
 [`Cloud Tasks`](https://cloud.google.com/tasks) allows us to schedule a HTTP request in the future.
 

@@ -19,7 +19,24 @@ def ScheduledRouteBuilder(
     pre_create_hook: ScheduledHook = None,
     client=None,
 ):
+    """
+    Returns a Mixin that should be used to override route_class.
 
+    It adds a .scheduler method to the original endpoint.
+
+    Example:
+    ```
+    scheduled_router = APIRouter(route_class=ScheduledRouteBuilder(...), prefix="/scheduled")
+
+    @scheduled_router.get("/simple_scheduled_task")
+    def simple_scheduled_task():
+        # Do work here
+
+    simple_scheduled_task.scheduler(name="simple_scheduled_task", schedule="* * * * *").schedule()
+
+    app.include_router(scheduled_router)
+    ```
+    """
     if client is None:
         client = scheduler_v1.CloudSchedulerClient()
 

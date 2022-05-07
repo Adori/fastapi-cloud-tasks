@@ -1,21 +1,29 @@
 # Standard Library Imports
 import logging
 import os
-import typing
 
 # Third Party Imports
 from fastapi import FastAPI
-from fastapi.params import Header
 from fastapi.routing import APIRouter
 from pydantic import BaseModel
 
 # Imports from this repository
-from fastapi_cloud_tasks.delayed_route import DelayedRouteBuilder
+from fastapi_cloud_tasks import DelayedRouteBuilder
+from fastapi_cloud_tasks.utils import emulator_client
 from fastapi_cloud_tasks.utils import queue_path
 
+# set env var IS_LOCAL=false for your deployment environment
+IS_LOCAL = os.getenv("IS_LOCAL", "true").lower() == "true"
+
+client = None
+if IS_LOCAL:
+    client = emulator_client()
+
+
 DelayedRoute = DelayedRouteBuilder(
+    client=client,
     # Base URL where the task server will get hosted
-    base_url=os.getenv("TASK_LISTENER_BASE_URL", default="https://d860-35-208-83-220.ngrok.io"),
+    base_url=os.getenv("TASK_LISTENER_BASE_URL", default="http://localhost:8000"),
     # Full queue path to which we'll send tasks.
     # Edit values below to match your project
     queue_path=queue_path(
@@ -25,7 +33,7 @@ DelayedRoute = DelayedRouteBuilder(
     ),
 )
 
-task_router = APIRouter(route_class=DelayedRoute, prefix="/tasks")
+delayed_router = APIRouter(route_class=DelayedRoute, prefix="/delayed")
 
 logger = logging.getLogger("uvicorn")
 
@@ -34,13 +42,10 @@ class Payload(BaseModel):
     message: str
 
 
-@task_router.post("/hello")
+@delayed_router.post("/hello")
 async def hello(
     p: Payload = Payload(message="Default"),
-    x_cloudtasks_taskretrycount: typing.Optional[int] = Header(0),
 ):
-    if x_cloudtasks_taskretrycount < 5:
-        raise Exception("Noooo")
     logger.warning(f"Hello task ran with payload: {p.message}")
 
 
@@ -53,4 +58,4 @@ async def trigger():
     return {"message": "Basic hello task triggered"}
 
 
-app.include_router(task_router)
+app.include_router(delayed_router)

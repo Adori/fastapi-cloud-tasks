@@ -7,9 +7,9 @@ from google.cloud import tasks_v2
 from google.protobuf import timestamp_pb2
 
 # Imports from this repository
+from fastapi_cloud_tasks.exception import BadMethodException
 from fastapi_cloud_tasks.hooks import DelayedTaskHook
 from fastapi_cloud_tasks.requester import Requester
-from fastapi_cloud_tasks.utils import taskMethod
 
 
 class Delayer(Requester):
@@ -19,9 +19,9 @@ class Delayer(Requester):
         route: APIRoute,
         base_url: str,
         queue_path: str,
-        task_create_timeout: float = 10.0,
         client: tasks_v2.CloudTasksClient,
         pre_create_hook: DelayedTaskHook,
+        task_create_timeout: float = 10.0,
         countdown: int = 0,
         task_id: str = None,
     ) -> None:
@@ -31,7 +31,7 @@ class Delayer(Requester):
         self.task_create_timeout = task_create_timeout
 
         self.task_id = task_id
-        self.method = taskMethod(route.methods)
+        self.method = _task_method(route.methods)
         self.client = client
         self.pre_create_hook = pre_create_hook
 
@@ -69,3 +69,23 @@ class Delayer(Requester):
         timestamp = timestamp_pb2.Timestamp()
         timestamp.FromDatetime(d)
         return timestamp
+
+
+def _task_method(methods):
+    methodMap = {
+        "POST": tasks_v2.HttpMethod.POST,
+        "GET": tasks_v2.HttpMethod.GET,
+        "HEAD": tasks_v2.HttpMethod.HEAD,
+        "PUT": tasks_v2.HttpMethod.PUT,
+        "DELETE": tasks_v2.HttpMethod.DELETE,
+        "PATCH": tasks_v2.HttpMethod.PATCH,
+        "OPTIONS": tasks_v2.HttpMethod.OPTIONS,
+    }
+    methods = list(methods)
+    # Only crash if we're being bound
+    if len(methods) > 1:
+        raise BadMethodException("Can't trigger task with multiple methods")
+    method = methodMap.get(methods[0], None)
+    if method is None:
+        raise BadMethodException(f"Unknown method {methods[0]}")
+    return method

@@ -1,70 +1,38 @@
-# Standard Library Imports
-from typing import Dict
-from typing import List
-from typing import Tuple
-
 # Third Party Imports
+import grpc
+from google.api_core.exceptions import AlreadyExists
 from google.cloud import scheduler_v1
 from google.cloud import tasks_v2
-from pydantic.error_wrappers import ErrorWrapper
-
-# Imports from this repository
-from fastapi_cloud_tasks.exception import BadMethodException
+from google.cloud.tasks_v2.services.cloud_tasks import transports
 
 
-def location_path(*, project, location):
+def location_path(*, project: str, location: str, **ignored):
     return scheduler_v1.CloudSchedulerClient.common_location_path(project=project, location=location)
 
 
-def queue_path(*, project, location, queue):
+def queue_path(*, project: str, location: str, queue: str):
     return tasks_v2.CloudTasksClient.queue_path(project=project, location=location, queue=queue)
 
 
-def err_val(resp: Tuple[Dict, List[ErrorWrapper]]):
-    values, errors = resp
-
-    if len(errors) != 0:
-        # TODO: Log everything but raise first only
-        # TODO: find a better way to raise and display these errors
-        raise errors[0].exc
-    return values
-
-
-def taskMethod(methods):
-    methodMap = {
-        "POST": tasks_v2.HttpMethod.POST,
-        "GET": tasks_v2.HttpMethod.GET,
-        "HEAD": tasks_v2.HttpMethod.HEAD,
-        "PUT": tasks_v2.HttpMethod.PUT,
-        "DELETE": tasks_v2.HttpMethod.DELETE,
-        "PATCH": tasks_v2.HttpMethod.PATCH,
-        "OPTIONS": tasks_v2.HttpMethod.OPTIONS,
-    }
-    methods = list(methods)
-    # Only crash if we're being bound
-    if len(methods) > 1:
-        raise BadMethodException("Can't trigger task with multiple methods")
-    method = methodMap.get(methods[0], None)
-    if method is None:
-        raise BadMethodException(f"Unknown method {methods[0]}")
-    return method
+def ensure_queue(
+    *,
+    client: tasks_v2.CloudTasksClient,
+    path: str,
+    **kwargs,
+):
+    # We extract information from the queue path to make the public api simpler
+    parsed_queue_path = client.parse_queue_path(path=path)
+    create_req = tasks_v2.CreateQueueRequest(
+        parent=location_path(**parsed_queue_path),
+        queue=tasks_v2.Queue(name=path, **kwargs),
+    )
+    try:
+        client.create_queue(request=create_req)
+    except AlreadyExists:
+        pass
 
 
-def schedulerMethod(methods):
-    methodMap = {
-        "POST": scheduler_v1.HttpMethod.POST,
-        "GET": scheduler_v1.HttpMethod.GET,
-        "HEAD": scheduler_v1.HttpMethod.HEAD,
-        "PUT": scheduler_v1.HttpMethod.PUT,
-        "DELETE": scheduler_v1.HttpMethod.DELETE,
-        "PATCH": scheduler_v1.HttpMethod.PATCH,
-        "OPTIONS": scheduler_v1.HttpMethod.OPTIONS,
-    }
-    methods = list(methods)
-    # Only crash if we're being bound
-    if len(methods) > 1:
-        raise BadMethodException("Can't schedule task with multiple methods")
-    method = methodMap.get(methods[0], None)
-    if method is None:
-        raise BadMethodException(f"Unknown method {methods[0]}")
-    return method
+def emulator_client(*, host="localhost:8123"):
+    channel = grpc.insecure_channel(host)
+    transport = transports.CloudTasksGrpcTransport(channel=channel)
+    return tasks_v2.CloudTasksClient(transport=transport)

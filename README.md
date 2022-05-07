@@ -19,7 +19,7 @@ pip install fastapi-cloud-tasks
 - Tasks are regular FastAPI endpoints on plain old HTTP.
   - `Depends` just works!
   - All middlewares, telemetry, auth, debugging etc solutions for FastAPI work as is.
-  - Host task runners it independent of GCP. If CloudTasks can reach the URL, it can invoke the task.
+  - Host task runners independent of GCP. If CloudTasks can reach the URL, it can invoke the task.
 - Save money.
   - Task invocation with GCP is [free for first million, then costs $0.4/million](https://cloud.google.com/tasks/pricing).
     That's almost always cheaper than running a RabbitMQ/Redis/SQL backend for celery.
@@ -103,7 +103,7 @@ FastAPI Cloud Tasks works by putting the three together:
 ### Local
 
 Pre-requisites:
-- `pip install local-requirements.txt`
+- `pip install fastapi-cloud-tasks`
 - Install [cloud-tasks-emulator](https://github.com/aertje/cloud-tasks-emulator)
   - Alternatively install ngrok and forward the server's port
 
@@ -331,5 +331,11 @@ async def my_task(ct_headers: CloudTasksHeaders = Depends()):
 ```
 
 Check the file [fastapi_cloud_tasks/dependencies.py](fastapi_cloud_tasks/dependencies.py) for details.
+
+## Contributing
+
+- Run `pre-commit install` on your local to get pre-commit hook.
+- Make changes and raise a PR!
+- If the change is massive, open an issue to discuss it before writing code.
 
 Note: This project is neither affiliated with, nor sponsored by Google.

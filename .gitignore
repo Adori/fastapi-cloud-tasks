@@ -128,4 +128,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# pyvenv
+pyvenv.cfg
+bin/
+
 version.txt

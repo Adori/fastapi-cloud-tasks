@@ -7,11 +7,15 @@ from google.cloud.tasks_v2.services.cloud_tasks import transports
 
 
 def location_path(*, project: str, location: str, **ignored):
-    return scheduler_v1.CloudSchedulerClient.common_location_path(project=project, location=location)
+    return scheduler_v1.CloudSchedulerClient.common_location_path(
+        project=project, location=location
+    )
 
 
 def queue_path(*, project: str, location: str, queue: str):
-    return tasks_v2.CloudTasksClient.queue_path(project=project, location=location, queue=queue)
+    return tasks_v2.CloudTasksClient.queue_path(
+        project=project, location=location, queue=queue
+    )
 
 
 def ensure_queue(

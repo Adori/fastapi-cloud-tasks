@@ -24,10 +24,10 @@ async def basic():
     return {"message": "Basic hello task scheduled"}
 
 
-@app.get("/delayed")
-async def delayed():
-    hello.options(countdown=5).delay(p=Payload(message="Delayed task"))
-    return {"message": "Delayed hello task scheduled"}
+@app.get("/with_countdown")
+async def with_countdown():
+    hello.options(countdown=5).delay(p=Payload(message="Countdown task"))
+    return {"message": "Countdown hello task scheduled"}
 
 
 @app.get("/deduped")
@@ -44,7 +44,9 @@ async def deduped(response: Response):
 @app.get("/fail")
 async def fail():
     fail_twice.delay()
-    return {"message": "The triggered task will fail twice and then be marked done automatically"}
+    return {
+        "message": "The triggered task will fail twice and then be marked done automatically"
+    }
 
 
 # We can use a trick on local to get all tasks on the same process as the main server.

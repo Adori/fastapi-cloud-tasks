@@ -6,9 +6,9 @@ from google.cloud import scheduler_v1
 from google.protobuf import duration_pb2
 
 # Imports from this repository
+from fastapi_cloud_tasks.exception import BadMethodException
 from fastapi_cloud_tasks.hooks import ScheduledHook
 from fastapi_cloud_tasks.requester import Requester
-from fastapi_cloud_tasks.utils import schedulerMethod
 
 
 class Scheduler(Requester):
@@ -50,7 +50,7 @@ class Scheduler(Requester):
         self.cron_schedule = schedule
         self.job_create_timeout = job_create_timeout
 
-        self.method = schedulerMethod(route.methods)
+        self.method = _scheduler_method(route.methods)
         self.client = client
         self.pre_create_hook = pre_create_hook
         self.force = force
@@ -107,3 +107,23 @@ class Scheduler(Requester):
             return True
         except Exception as ex:
             return ex
+
+
+def _scheduler_method(methods):
+    methodMap = {
+        "POST": scheduler_v1.HttpMethod.POST,
+        "GET": scheduler_v1.HttpMethod.GET,
+        "HEAD": scheduler_v1.HttpMethod.HEAD,
+        "PUT": scheduler_v1.HttpMethod.PUT,
+        "DELETE": scheduler_v1.HttpMethod.DELETE,
+        "PATCH": scheduler_v1.HttpMethod.PATCH,
+        "OPTIONS": scheduler_v1.HttpMethod.OPTIONS,
+    }
+    methods = list(methods)
+    # Only crash if we're being bound
+    if len(methods) > 1:
+        raise BadMethodException("Can't schedule task with multiple methods")
+    method = methodMap.get(methods[0], None)
+    if method is None:
+        raise BadMethodException(f"Unknown method {methods[0]}")
+    return method

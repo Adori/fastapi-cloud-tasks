@@ -2,6 +2,29 @@
 
 Strongly typed background tasks with FastAPI and Google CloudTasks.
 
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant Service
+    participant CloudTasks
+    participant Worker
+
+
+    User ->>+ Service: POST /start_making_dinner
+
+    rect rgb(100,130,180)
+    note right of Service: make_dinner.delay(restaurant="taj")
+    Service -->>+ CloudTasks: Create task
+    CloudTasks -->>- Service: Accepted
+    end
+
+    Service ->>- User: Started Making dinner.
+    note right of CloudTasks: Async
+    CloudTasks -->>+ Worker: /taj/make_dinner
+    Worker -->>- CloudTasks: 200
+```
+
 ## Installation
 
 ```

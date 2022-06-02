@@ -11,18 +11,20 @@ sequenceDiagram
     participant Worker
 
 
-    User ->>+ Service: POST /start_making_dinner
+    User ->>+ Service: /trigger
+
 
     rect rgb(100,130,180)
-    note right of Service: make_dinner.delay(restaurant="taj")
+    note right of Service: hello.delay()
     Service -->>+ CloudTasks: Create task
     CloudTasks -->>- Service: Accepted
     end
 
-    Service ->>- User: Started Making dinner.
+    Service ->>- User: Hello task triggered
     note right of CloudTasks: Async
-    CloudTasks -->>+ Worker: /taj/make_dinner
+    CloudTasks -->>+ Worker: /hello
     Worker -->>- CloudTasks: 200
+
 ```
 
 ## Installation

@@ -11,7 +11,7 @@ from urllib.parse import urlunparse
 from fastapi.dependencies.utils import request_params_to_args
 from fastapi.encoders import jsonable_encoder
 from fastapi.routing import APIRoute
-from pydantic.error_wrappers import ErrorWrapper
+from pydantic.v1.error_wrappers import ErrorWrapper
 
 # Imports from this repository
 from fastapi_cloud_tasks.exception import MissingParamError
@@ -58,7 +58,7 @@ class Requester:
         path_values = _err_val(
             request_params_to_args(route.dependant.path_params, values)
         )
-        for (name, converter) in route.param_convertors.items():
+        for name, converter in route.param_convertors.items():
             if name in path_values:
                 continue
             if name not in values:

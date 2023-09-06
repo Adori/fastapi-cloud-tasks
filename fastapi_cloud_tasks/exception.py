@@ -1,6 +1,6 @@
 # Third Party Imports
-from pydantic.errors import MissingError
-from pydantic.errors import PydanticValueError
+from pydantic.v1.errors import MissingError
+from pydantic.v1.errors import PydanticValueError
 
 
 class MissingParamError(MissingError):

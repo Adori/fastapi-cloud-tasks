@@ -1,5 +1,5 @@
 # Third Party Imports
-from pydantic import BaseModel
+from pydantic.v1 import BaseModel
 
 
 class Payload(BaseModel):
